@@ -19,11 +19,28 @@ if st.button("🚀 開始結算並產出報表") and uploaded_file is not None:
             else:
                 df = pd.read_excel(uploaded_file, header=None, dtype=str).fillna("")
 
-            # 欄位索引設定 (與你確認過的 GAS 索引完全一致)
-            COL_STATUS, COL_AMOUNT, COL_SALES = 16, 17, 35
-            COL_AA, COL_AB, COL_COMM, COL_DISC = 36, 37, 39, 40
+            # ==========================================
+            # 【關鍵修正】改回你正常表格的欄位索引 (A=0, B=1...)
+            # ==========================================
+            COL_STATUS = 6   # G欄：退貨狀態
+            COL_AMOUNT = 7   # H欄：金額
+            COL_SALES  = 25  # Z欄：商家負責業務
+            COL_AA     = 26  # AA欄：數值 1
+            COL_AB     = 27  # AB欄：數值 2
+            COL_COMM   = 29  # AD欄：傭金
+            COL_DISC   = 30  # AE欄：平台折扣
+            
+            # 【防呆機制】如果 Excel 最後幾欄完全空白，Pandas 可能會讀不到那些欄位
+            # 這裡強制把欄位補齊到至少 31 欄 (AE欄)，避免 KeyError
+            max_required_col = max([COL_STATUS, COL_AMOUNT, COL_SALES, COL_AA, COL_AB, COL_COMM, COL_DISC])
+            for c in range(df.shape[1], max_required_col + 1):
+                df[c] = ""
 
             headers = df.iloc[0].tolist()
+            # 同步確保表頭長度足夠
+            while len(headers) <= max_required_col:
+                headers.append(f"未命名欄位_{len(headers)}")
+                
             data = df.iloc[1:].copy()
 
             # 清理文字與轉換數值
